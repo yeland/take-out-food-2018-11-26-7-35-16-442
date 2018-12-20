@@ -71,7 +71,7 @@ function computeHalfPrice(itemsInfo, type, allHalfItems) {
 }
 function getHalfItems(itemsInfo, allHalfItems) {
   let items = [];
-  itemsInfo.forEach(ele => {
+  itemsInfo.forEach(function (ele) {
     if (allHalfItems.includes(ele.id)) {
       items.push(ele.name);
     }
@@ -79,7 +79,7 @@ function getHalfItems(itemsInfo, allHalfItems) {
   return items;
 }
 function computeHalf(itemsInfo, allHalfItems) {
-  return itemsInfo.reduce((preEle, ele) => {
+  return itemsInfo.reduce(function (preEle, ele) {
     if (allHalfItems.includes(ele.id)) {
       return preEle + ele.allPrice / 2;
     }
