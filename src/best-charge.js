@@ -10,7 +10,7 @@ function getItemsInfo(selectedItems) {
 function getItemsNumber(selectedItems) {
   let items = selectedItems.map(function (element) {
     let threeParts = element.split(" ");
-    let item = new Object();
+    let item = {};
     item.id = threeParts[0];
     item.amount = parseInt(threeParts[2]);
     return item;
@@ -23,7 +23,7 @@ function getItemsPrice(items) {
 }
 function getSinglePrice(items) {
   let allItems = loadAllItems();
-  let itemsInfo = items.map(function (item) {
+  return items.map(function (item) {
     allItems.forEach(function (element) {
       if (item.id == element.id) {
         item.name = element.name;
@@ -32,7 +32,6 @@ function getSinglePrice(items) {
     })
     return item;
   })
-  return itemsInfo;
 }
 function getManyPrice(itemsInfo) {
   return itemsInfo.map(function (item) {
@@ -51,44 +50,41 @@ function getPromotionPrice(itemsInfo) {
   return comparaPromotions(promotionCut, promotionHalf);
 }
 function computeCutPrice(itemsInfo, type) {
-  let promotionCut = new Object();
   let totalPrice = itemsInfo.reduce(function (preEle, ele) {
     return preEle + ele.allPrice;
   }, 0);
   if (totalPrice >= 30) {
-    totalPrice = totalPrice - 6;
-    promotionCut.type = type;
-    promotionCut.savePrice = 6;
-  } else {
-    promotionCut.type = null;
+    return { sumPrice: totalPrice - 6, type, savePrice: 6 };
   }
-  promotionCut.sumPrice = totalPrice;
-  return promotionCut;
+  return { type: null, sumPrice: totalPrice };
 }
 function computeHalfPrice(itemsInfo, type, allHalfItems) {
-  let promotionHalf = new Object();
   let totalPrice = itemsInfo.reduce(function (preEle, ele) {
     return preEle + ele.allPrice;
   }, 0);
-  let halfItems = new Array();
-  let promotionPrice = itemsInfo.reduce(function (preEle, ele) {
-    if (allHalfItems.includes(ele.id)) {
-      halfItems.push(ele.name);
-      return preEle + ele.allPrice / 2;
-    } else {
-      return preEle + ele.allPrice;
-    }
-  }, 0);
-  if (halfItems != []) {
-    promotionHalf.type = type;
-    promotionHalf.halfItems = halfItems;
-    promotionHalf.sumPrice = promotionPrice;
-    promotionHalf.savePrice = totalPrice - promotionPrice;
-  } else {
-    promotionHalf.type = null;
-    promotionHalf.sumPrice = totalPrice;
+  let halfItems = getHalfItems(itemsInfo, allHalfItems);
+  let promotionPrice = computeHalf(itemsInfo, allHalfItems);
+  if (halfItems.length) {
+    return { type, halfItems, sumPrice: promotionPrice, savePrice: totalPrice - promotionPrice };
   }
-  return promotionHalf;
+  return { type: null, sumPrice: totalPrice };
+}
+function getHalfItems(itemsInfo, allHalfItems) {
+  let items = [];
+  itemsInfo.forEach(ele => {
+    if (allHalfItems.includes(ele.id)) {
+      items.push(ele.name);
+    }
+  })
+  return items;
+}
+function computeHalf(itemsInfo, allHalfItems) {
+  return itemsInfo.reduce((preEle, ele) => {
+    if (allHalfItems.includes(ele.id)) {
+      return preEle + ele.allPrice / 2;
+    }
+    return preEle + ele.allPrice;
+  }, 0);
 }
 function comparaPromotions(cut, half) {
   if (cut.sumPrice > half.sumPrice) {
@@ -100,7 +96,7 @@ function comparaPromotions(cut, half) {
 function printToString(itemsInfo, promotion) {
   let header = '============= 订餐明细 =============\n';
   let sum = '总计：' + promotion.sumPrice + '元\n';
-  let dot = '-----------------------------------\n'; 
+  let dot = '-----------------------------------\n';
   let doubleDot = '===================================';
   let item = header + itemsString(itemsInfo) + dot + promotionString(promotion) + sum + doubleDot;
 
@@ -116,24 +112,16 @@ function itemsString(itemsInfo) {
   return string;
 }
 function promotionString(promotion) {
-  let string;
   let stringItems;
-  let dot = '-----------------------------------\n'; 
+  let dot = '-----------------------------------\n';
   if (promotion.type == '指定菜品半价') {
-    stringItems = promotion.halfItems.reduce(function (preEle, ele, index, array) {
-      if (index != array.length - 1) {
-        return preEle + ele + '，';
-      } else {
-        return preEle + ele;
-      }
-    }, '')
+    stringItems = promotion.halfItems.join('，');
   }
   if (promotion.type == null) {
-    string = '';
+    return '';
   } else if (promotion.type == '指定菜品半价') {
-    string = '使用优惠:\n' + promotion.type + '(' + stringItems + ')，省' + promotion.savePrice + '元\n' + dot;
+    return '使用优惠:\n' + promotion.type + '(' + stringItems + ')，省' + promotion.savePrice + '元\n' + dot;
   } else {
-    string = '使用优惠:\n' + promotion.type + '，省' + promotion.savePrice + '元\n' + dot;
+    return '使用优惠:\n' + promotion.type + '，省' + promotion.savePrice + '元\n' + dot;
   }
-  return string;
 }
